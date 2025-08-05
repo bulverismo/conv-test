@@ -1,0 +1,14 @@
+[
+ {
+  "directory": "/home/jose/benti-vi-pc/main",
+  "arguments": [
+   "gcc",
+   "-o",
+   "main",
+   "main.c",
+   "lenet_inference.c",
+   "-Wall"
+  ],
+  "file": "lenet_inference.c"
+ }
+]
