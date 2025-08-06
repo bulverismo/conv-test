@@ -9,6 +9,7 @@
 #define FILE_TEST_IMAGE		"t10k-images-idx3-ubyte"
 #define FILE_TEST_LABEL		"t10k-labels-idx1-ubyte"
 #define LENET_FILE 		"model.dat"
+#define LENET_FILE_FIXED 		"model_fixed.dat"
 #define COUNT_TRAIN		60000
 #define COUNT_TEST		10000
 
@@ -159,6 +160,17 @@ int save(LeNet5 *lenet, char filename[])
 	return 0;
 }
 
+
+int save_fixed(LeNet5_fixed *lenet_fixed, char filename[])
+{
+    FILE *fp = fopen(filename, "wb");
+    if (!fp) return 1;
+    fwrite(lenet_fixed, sizeof(LeNet5_fixed), 1, fp);
+    fclose(fp);
+    return 0;
+}
+
+
 int load(LeNet5 *lenet, char filename[])
 {
 	FILE *fp = fopen(filename, "rb");
@@ -167,6 +179,17 @@ int load(LeNet5 *lenet, char filename[])
 	fclose(fp);
 	return 0;
 }
+
+
+int load_fixed(LeNet5_fixed *lenet_fixed, char filename[])
+{
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) return 1;
+    fread(lenet_fixed, sizeof(LeNet5_fixed), 1, fp);
+    fclose(fp);
+    return 0;
+}
+
 
 
 
@@ -213,6 +236,8 @@ void foo()
         float_accuracy = testing(lenet, test_data, test_label, 1000);
         printf("New float accuracy: %d/1000\n", float_accuracy);
 
+        save(lenet, LENET_FILE);
+
         if (float_accuracy < 980) {
             printf("FATAL ERROR: Model cannot be trained properly\n");
             exit(1);
@@ -222,6 +247,8 @@ void foo()
   convert_model(lenet_fixed, lenet);
 
   apply_bias_correction(lenet_fixed, lenet);
+
+    //save_fixed(lenet_fixed, LENET_FILE_FIXED);
 
   printf("=== Conversion Validation ===\n");
   validate_conversion(lenet, lenet_fixed);
@@ -263,7 +290,7 @@ void foo()
 	free(train_label);
 	free(test_data);
 	free(test_label);
-	system("pause");
+	//system("pause");
 }
 
 int main()

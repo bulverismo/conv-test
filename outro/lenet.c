@@ -9,7 +9,7 @@
 #define GETDIM2(array)   (sizeof(array[0]) / sizeof(*(array[0])))
 #define GETDIM3(array)   (sizeof(array[0][0]) / sizeof(*(array[0][0])))
 #define FOREACH_FIXED(i, count) for (int i = 0; i < (int)(count); ++i)
-#define FIXED_MUL(a, b) ((fixed)(((int64_t)(a) * (b)) >> FIXED_SCALE))
+#define FIXED_MUL(a, b) ((fixed)(((int32_t)(a) * (b)) >> FIXED_SCALE))
 
 
 #define GETLENGTH(array) (sizeof(array)/sizeof(*(array)))
@@ -45,81 +45,17 @@ fixed relu_fixed(fixed x) {
 }
 
 
-static inline void convolute_valid_fixed(
-    fixed input[INPUT][LENGTH_FEATURE0][LENGTH_FEATURE0],
-    fixed output[LAYER1][LENGTH_FEATURE1][LENGTH_FEATURE1],
-    fixed kernel[INPUT][LAYER1][LENGTH_KERNEL][LENGTH_KERNEL]) 
-{
-    for (int oc = 0; oc < LAYER1; oc++) {
-        for (int y = 0; y < LENGTH_FEATURE1; y++) {
-            for (int x = 0; x < LENGTH_FEATURE1; x++) {
-                int64_t sum = 0;
-                for (int ic = 0; ic < INPUT; ic++) {
-                    for (int ky = 0; ky < LENGTH_KERNEL; ky++) {
-                        for (int kx = 0; kx < LENGTH_KERNEL; kx++) {
-                            sum += (int64_t)input[ic][y + ky][x + kx] * 
-                                   kernel[ic][oc][ky][kx];
-                        }
-                    }
-                }
-                output[oc][y][x] = (fixed)(sum >> FIXED_SCALE);
-            }
-        }
-    }
-}
-
-static inline void add_bias_relu(
-    fixed features[LAYER1][LENGTH_FEATURE1][LENGTH_FEATURE1],
-    fixed bias[LAYER1],
-    int channels, 
-    int height, 
-    int width) 
-{
-    for (int c = 0; c < channels; c++) {
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                fixed val = features[c][i][j] + bias[c];
-                features[c][i][j] = relu_fixed(val);
-            }
-        }
-    }
-}
-
-static inline void max_pooling_fixed(
-    fixed input[LAYER1][LENGTH_FEATURE1][LENGTH_FEATURE1],
-    fixed output[LAYER1][LENGTH_FEATURE2][LENGTH_FEATURE2],
-    int channels, 
-    int input_size, 
-    int output_size) 
-{
-    const int pool_size = input_size / output_size;
-    
-    for (int c = 0; c < channels; c++) {
-        for (int y = 0; y < output_size; y++) {
-            for (int x = 0; x < output_size; x++) {
-                fixed max_val = input[c][y * pool_size][x * pool_size];
-                for (int py = 0; py < pool_size; py++) {
-                    for (int px = 0; px < pool_size; px++) {
-                        fixed val = input[c][y * pool_size + py][x * pool_size + px];
-                        if (val > max_val) max_val = val;
-                    }
-                }
-                output[c][y][x] = max_val;
-            }
-        }
-    }
-}
 
 static void forward_fixed(LeNet5_fixed *lenet_fixed, Feature_fixed *features_fixed) {
     // Conv1: input 32x32 -> 28x28
     for (int oc = 0; oc < LAYER1; oc++) {
         for (int y = 0; y < LENGTH_FEATURE1; y++) {
             for (int x = 0; x < LENGTH_FEATURE1; x++) {
-                int64_t sum = 0;
+                int32_t sum = 0;
                 for (int ic = 0; ic < INPUT; ic++) {
                     for (int ky = 0; ky < LENGTH_KERNEL; ky++) {
                         for (int kx = 0; kx < LENGTH_KERNEL; kx++) {
-                            sum += (int64_t)features_fixed->input[ic][y + ky][x + kx] * 
+                            sum += (int32_t)features_fixed->input[ic][y + ky][x + kx] * 
                                    lenet_fixed->weight0_1[ic][oc][ky][kx];
                         }
                     }
@@ -155,11 +91,11 @@ static void forward_fixed(LeNet5_fixed *lenet_fixed, Feature_fixed *features_fix
     for (int oc = 0; oc < LAYER3; oc++) {
         for (int y = 0; y < LENGTH_FEATURE3; y++) {
             for (int x = 0; x < LENGTH_FEATURE3; x++) {
-                int64_t sum = 0;
+                int32_t sum = 0;
                 for (int ic = 0; ic < LAYER2; ic++) {
                     for (int ky = 0; ky < LENGTH_KERNEL; ky++) {
                         for (int kx = 0; kx < LENGTH_KERNEL; kx++) {
-                            sum += (int64_t)features_fixed->layer2[ic][y + ky][x + kx] * 
+                            sum += (int32_t)features_fixed->layer2[ic][y + ky][x + kx] * 
                                    lenet_fixed->weight2_3[ic][oc][ky][kx];
                         }
                     }
@@ -195,11 +131,11 @@ static void forward_fixed(LeNet5_fixed *lenet_fixed, Feature_fixed *features_fix
     for (int oc = 0; oc < LAYER5; oc++) {
         for (int y = 0; y < LENGTH_FEATURE5; y++) {
             for (int x = 0; x < LENGTH_FEATURE5; x++) {
-                int64_t sum = 0;
+                int32_t sum = 0;
                 for (int ic = 0; ic < LAYER4; ic++) {
                     for (int ky = 0; ky < LENGTH_KERNEL; ky++) {
                         for (int kx = 0; kx < LENGTH_KERNEL; kx++) {
-                            sum += (int64_t)features_fixed->layer4[ic][y + ky][x + kx] * 
+                            sum += (int32_t)features_fixed->layer4[ic][y + ky][x + kx] * 
                                    lenet_fixed->weight4_5[ic][oc][ky][kx];
                         }
                     }
@@ -227,9 +163,9 @@ static void forward_fixed(LeNet5_fixed *lenet_fixed, Feature_fixed *features_fix
 
     // Fully Connected
     for (int i = 0; i < OUTPUT; i++) {
-        int64_t sum = 0;
+        int32_t sum = 0;
         for (int j = 0; j < LAYER5 * LENGTH_FEATURE5 * LENGTH_FEATURE5; j++) {
-            sum += (int64_t)flattened[j] * lenet_fixed->weight5_6[j][i];
+            sum += (int32_t)flattened[j] * lenet_fixed->weight5_6[j][i];
         }
         features_fixed->output[i] = (fixed)(sum >> FIXED_SCALE) + 
                                     lenet_fixed->bias5_6[i];
@@ -743,11 +679,11 @@ void debug_first_layer_activations(LeNet5 *lenet, LeNet5_fixed *lenet_fixed, ima
     for (int oc = 0; oc < LAYER1; oc++) {
         for (int y = 0; y < LENGTH_FEATURE1; y++) {
             for (int x = 0; x < LENGTH_FEATURE1; x++) {
-                int64_t sum = 0;
+                int32_t sum = 0;
                 for (int ic = 0; ic < INPUT; ic++) {
                     for (int ky = 0; ky < LENGTH_KERNEL; ky++) {
                         for (int kx = 0; kx < LENGTH_KERNEL; kx++) {
-                            sum += (int64_t)features_fixed.input[ic][y + ky][x + kx] *
+                            sum += (int32_t)features_fixed.input[ic][y + ky][x + kx] *
                                    lenet_fixed->weight0_1[ic][oc][ky][kx];
                         }
                     }

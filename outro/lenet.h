@@ -44,9 +44,9 @@ typedef uint8 image[28][28];
 
 #include <stdint.h>
 
-typedef int32_t fixed;
+typedef int16_t fixed;
 //#define FIXED_SCALE 16  // bits fracionários (Q16.16)
-#define FIXED_SCALE 24  // Q24.8 (32-bit total)
+#define FIXED_SCALE 8  // Q24.8 (32-bit total)
 #define FLOAT_TO_FIXED(x) ((fixed)((x) * (1 << FIXED_SCALE)))
 #define FIXED_TO_FLOAT(x) ((double)(x) / (1 << FIXED_SCALE))
 
