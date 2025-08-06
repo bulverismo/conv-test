@@ -1,0 +1,15 @@
+[
+ {
+  "directory": "/home/jose/benti-vi-pc/outro",
+  "arguments": [
+   "gcc",
+   "-o",
+   "main",
+   "main.c",
+   "lenet.c",
+   "-Wall",
+   "-lm"
+  ],
+  "file": "lenet.c"
+ }
+]
