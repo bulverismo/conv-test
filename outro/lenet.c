@@ -165,10 +165,11 @@ static void forward_fixed(LeNet5_fixed *lenet_fixed, Feature_fixed *features_fix
     for (int i = 0; i < OUTPUT; i++) {
         int32_t sum = 0;
         for (int j = 0; j < LAYER5 * LENGTH_FEATURE5 * LENGTH_FEATURE5; j++) {
-            sum += (int32_t)flattened[j] * lenet_fixed->weight5_6[j][i];
+            // Usar mais precisão intermediária
+            sum += (int32_t)flattened[j] * (int32_t)lenet_fixed->weight5_6[j][i] * 4;
         }
-        features_fixed->output[i] = (fixed)(sum >> FIXED_SCALE) + 
-                                    lenet_fixed->bias5_6[i];
+        features_fixed->output[i] = (fixed)((sum >> (FIXED_SCALE + 2)) + 
+                                        lenet_fixed->bias5_6[i]);
     }
 }
 
@@ -476,17 +477,19 @@ static uint8 get_result(Feature *features, uint8 count)
 }
 
 static uint8 get_result_fixed(Feature_fixed *features_fixed, uint8 count) {
-    fixed *output = features_fixed->output; 
+    // Apenas encontre o índice do maior valor - funciona porque softmax é monotônico
+    fixed max_val = features_fixed->output[0];
     uint8 result = 0;
-    fixed maxvalue = output[0];
-    for (uint8 i = 1; i < count; ++i) {
-        if (output[i] > maxvalue) {
-            maxvalue = output[i];
+    
+    for (uint8 i = 1; i < count; i++) {
+        if (features_fixed->output[i] > max_val) {
+            max_val = features_fixed->output[i];
             result = i;
         }
     }
     return result;
 }
+
 static double f64rand()
 {
 	static int randbit = 0;

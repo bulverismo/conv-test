@@ -248,7 +248,7 @@ void foo()
 
   apply_bias_correction(lenet_fixed, lenet);
 
-    //save_fixed(lenet_fixed, LENET_FILE_FIXED);
+  save_fixed(lenet_fixed, LENET_FILE_FIXED);
 
   printf("=== Conversion Validation ===\n");
   validate_conversion(lenet, lenet_fixed);
@@ -290,7 +290,7 @@ void foo()
 	free(train_label);
 	free(test_data);
 	free(test_label);
-	//system("pause");
+	system("pause");
 }
 
 int main()
